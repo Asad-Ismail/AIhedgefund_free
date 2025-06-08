@@ -146,7 +146,7 @@ if __name__ == "__main__":
     parser.add_argument("--show-reasoning", action="store_true", help="Show reasoning from each agent")
     parser.add_argument("--show-agent-graph", action="store_true", help="Show the agent graph")
     parser.add_argument("--ollama", action="store_true", help="Use Ollama for local LLM inference")
-
+    parser.add_argument("--gpt4free", action="store_true", help="Use GPT4Free for free LLM")
     args = parser.parse_args()
 
     # Parse tickers from comma-separated string
@@ -214,6 +214,14 @@ if __name__ == "__main__":
 
         model_provider = ModelProvider.OLLAMA.value
         print(f"\nSelected {Fore.CYAN}Ollama{Style.RESET_ALL} model: {Fore.GREEN + Style.BRIGHT}{model_name}{Style.RESET_ALL}\n")
+    elif args.gpt4free:
+        print(f"{Fore.CYAN}Using GPT4Free for local LLM inference.{Style.RESET_ALL}")
+        model_name = "deepseek-r1"
+        #questionary.text("Enter the custom model name:").ask()
+        #if not model_name:
+        #    print("\n\nInterrupt received. Exiting...")
+        #    sys.exit(0)
+        model_provider = ModelProvider.GPT4FREE.value
     else:
         # Use the standard cloud-based LLM selection
         model_choice = questionary.select(

@@ -1,4 +1,31 @@
-# AI Hedge Fund
+# AI Hedge Fund Free
+
+###  Original Repo Credit
+This is an enhanced fork of the original (AIHedgeFund)[https://github.com/virattt/ai-hedge-fund.git] Check out the original repo and full credit goes to the original author and contributors. 
+
+This fork adds free GPT4free to the original implemntation because most people cannot pay for apis for testing and educational purposes, so the idea is to make it useful for as many people as possible.
+
+
+### Usage
+
+```bash
+
+git clone https://github.com/Asad-Ismail/AIhedgefund_free
+cd AIhedgefund_free
+# install Poetry
+curl -sSL https://install.python-poetry.org | python3 -
+poetry install 
+poetry run/python src/main.py  --ticker AAPL,MSFT,NVDA ----gpt4free 
+
+```
+### TODO
+1. Create a PR for using GPTFfree
+2. Using many hedge fund cause rate limit currently for ticker information retrieval fix that, maybe use alternative souces for data.
+
+For more detail about installation and usage see below original repo readme or visit the (originalwork)[https://github.com/virattt/ai-hedge-fund.git] 
+
+### Original Repo
+
 
 This is a proof of concept for an AI-powered hedge fund.  The goal of this project is to explore the use of AI to make trading decisions.  This project is for **educational** purposes only and is not intended for real trading or investment.
 

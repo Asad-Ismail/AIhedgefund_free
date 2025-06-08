@@ -43,8 +43,9 @@ def call_llm(
     model_info = get_model_info(model_name, model_provider)
     llm = get_model(model_name, model_provider)
 
-    # For non-JSON support models, we can use structured output
-    if not (model_info and not model_info.has_json_mode()):
+    # For non-JSON support models or GPT4Free, we can use structured output
+    # GPT4Free doesn't support native JSON mode but has custom structured output
+    if not (model_info and not model_info.has_json_mode()) or model_provider == "GPT4FREE":
         llm = llm.with_structured_output(
             pydantic_model,
             method="json_mode",

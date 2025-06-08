@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import json
 from langchain_anthropic import ChatAnthropic
@@ -21,6 +22,7 @@ class ModelProvider(str, Enum):
     GROQ = "Groq"
     OPENAI = "OpenAI"
     OLLAMA = "Ollama"
+    GPT4FREE = "GPT4Free"
 
 
 class LLMModel(BaseModel):
@@ -104,7 +106,7 @@ def get_model_info(model_name: str, model_provider: str) -> LLMModel | None:
     return next((model for model in all_models if model.model_name == model_name and model.provider == model_provider), None)
 
 
-def get_model(model_name: str, model_provider: ModelProvider) -> ChatOpenAI | ChatGroq | ChatOllama | None:
+def get_model(model_name: str, model_provider: ModelProvider) -> ChatOpenAI | ChatGroq | ChatOllama | ChatOpenAI | None:
     if model_provider == ModelProvider.GROQ:
         api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
@@ -148,3 +150,100 @@ def get_model(model_name: str, model_provider: ModelProvider) -> ChatOpenAI | Ch
             model=model_name,
             base_url=base_url,
         )
+    elif model_provider == ModelProvider.GPT4FREE:
+        print(f"Using GPT4Free for LLM. {model_name}")
+        from langchain_community.chat_models.openai import ChatOpenAI
+        from pydantic import Field, BaseModel
+        from g4f.client import AsyncClient, Client
+        from g4f import Provider
+        from g4f.Provider import RetryProvider,PollinationsAI
+        from langchain_community.chat_models.openai import ChatOpenAI
+        from langchain_core.runnables import Runnable
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import PydanticOutputParser
+        from typing import Type, Any, Dict
+
+        class ChatAI(ChatOpenAI):
+            model_name: str = Field(default="gpt-4o", alias="model")
+            
+            @classmethod
+            def validate_environment(cls, values: dict) -> dict:
+                client_params = {
+                    "api_key": values["api_key"] if "api_key" in values else None,
+                    "provider": values["model_kwargs"]["provider"] if "provider" in values["model_kwargs"] else None,
+                }
+                values["client"] = Client(**client_params).chat.completions
+                values["async_client"] = AsyncClient(**client_params).chat.completions
+                return values
+            
+            def with_structured_output(
+                self,
+                schema: Type[BaseModel],
+                method: str = "json_mode",
+                **kwargs
+            ) -> Runnable[Any, BaseModel]:
+                """
+                Custom structured output for GPT4Free that doesn't support native tool binding.
+                Creates a chain that formats prompts and parses responses.
+                """
+                parser = PydanticOutputParser(pydantic_object=schema)
+                
+                def structured_chain(inputs):
+                    # If inputs is a list of messages, convert to string
+                    if isinstance(inputs, list):
+                        # Extract the last human message content
+                        prompt_content = ""
+                        for msg in inputs:
+                            if hasattr(msg, 'content'):
+                                prompt_content += msg.content + "\n"
+                    elif hasattr(inputs, 'content'):
+                        prompt_content = inputs.content
+                    else:
+                        prompt_content = str(inputs)
+                    
+                    # Add JSON schema instructions to the prompt
+                    enhanced_prompt = f"""{prompt_content}
+                    Please respond with a valid JSON object that matches this schema:
+                    {parser.get_format_instructions()}
+
+                    Make sure your response is valid JSON wrapped in ```json``` tags."""
+                    
+                    # Call the original LLM
+                    response = self.invoke(enhanced_prompt)
+                    
+                    # Parse the JSON response
+                    try:
+                        # Extract JSON from markdown if present
+                        content = response.content
+                        if "```json" in content:
+                            json_start = content.find("```json") + 7
+                            json_end = content.find("```", json_start)
+                            if json_end != -1:
+                                json_content = content[json_start:json_end].strip()
+                            else:
+                                json_content = content[json_start:].strip()
+                        else:
+                            json_content = content
+                        
+                        # Parse using the Pydantic parser
+                        return parser.parse(json_content)
+                    except Exception as e:
+                        print(f"Error parsing structured output: {e}")
+                        # Return a default instance of the schema
+                        return schema()
+                
+                # Create a runnable that applies the structured chain
+                class StructuredRunnable(Runnable):
+                    def invoke(self, input, config=None):
+                        return structured_chain(input)
+                    
+                    def stream(self, input, config=None):
+                        yield structured_chain(input)
+                    
+                    async def ainvoke(self, input, config=None):
+                        return structured_chain(input)
+                
+                return StructuredRunnable()
+
+        providers=RetryProvider([PollinationsAI], shuffle=False)
+        return ChatAI(model=model_name,model_kwargs={"provider":providers})
