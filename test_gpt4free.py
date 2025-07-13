@@ -13,7 +13,6 @@ def test_gpt4free_structured():
         # Test GPT4Free with structured output
         llm = get_model('gpt-4o-mini', ModelProvider.GPT4FREE)
         print("✅ GPT4Free model created successfully")
-        
         structured_llm = llm.with_structured_output(TestOutput)
         print("✅ Structured output wrapper created successfully")
         

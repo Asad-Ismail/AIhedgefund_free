@@ -156,7 +156,7 @@ def get_model(model_name: str, model_provider: ModelProvider) -> ChatOpenAI | Ch
         from pydantic import Field, BaseModel
         from g4f.client import AsyncClient, Client
         from g4f import Provider
-        from g4f.Provider import RetryProvider,PollinationsAI
+        from g4f.Provider import RetryProvider,PollinationsAI,Blackbox
         from langchain_community.chat_models.openai import ChatOpenAI
         from langchain_core.runnables import Runnable
         from langchain_core.prompts import ChatPromptTemplate

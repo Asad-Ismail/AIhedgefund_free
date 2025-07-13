@@ -25,7 +25,6 @@ load_dotenv()
 
 init(autoreset=True)
 
-
 def parse_hedge_fund_response(response):
     """Parses a JSON string and returns a dictionary."""
     try:
@@ -111,15 +110,18 @@ def create_workflow(selected_analysts=None):
     if selected_analysts is None:
         selected_analysts = list(analyst_nodes.keys())
     # Add selected analyst nodes
+    previous_node="start_node"
     for analyst_key in selected_analysts:
         node_name, node_func = analyst_nodes[analyst_key]
+        # Add delay of cetrain time
         workflow.add_node(node_name, node_func)
-        workflow.add_edge("start_node", node_name)
+        #workflow.add_node(node_name, node_func)
+        workflow.add_edge(previous_node, node_name)
+        previous_node = node_name
 
     # Always add risk and portfolio management
     workflow.add_node("risk_management_agent", risk_management_agent)
     workflow.add_node("portfolio_manager", portfolio_management_agent)
-
     # Connect selected analysts to risk management
     for analyst_key in selected_analysts:
         node_name = analyst_nodes[analyst_key][0]
@@ -134,7 +136,7 @@ def create_workflow(selected_analysts=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the hedge fund trading system")
-    parser.add_argument("--initial-cash", type=float, default=100000.0, help="Initial cash position. Defaults to 100000.0)")
+    parser.add_argument("--initial-cash", type=float, default=400.0, help="Initial cash position. Defaults to 100000.0)")
     parser.add_argument("--margin-requirement", type=float, default=0.0, help="Initial margin requirement. Defaults to 0.0")
     parser.add_argument("--tickers", type=str, required=True, help="Comma-separated list of stock ticker symbols")
     parser.add_argument(
@@ -147,6 +149,8 @@ if __name__ == "__main__":
     parser.add_argument("--show-agent-graph", action="store_true", help="Show the agent graph")
     parser.add_argument("--ollama", action="store_true", help="Use Ollama for local LLM inference")
     parser.add_argument("--gpt4free", action="store_true", help="Use GPT4Free for free LLM")
+    # provide gpt4free model name here 
+    parser.add_argument("--g4fmodel", default="gpt-4o-mini", help="Use GPT4Free for free LLM")
     args = parser.parse_args()
 
     # Parse tickers from comma-separated string
@@ -216,7 +220,7 @@ if __name__ == "__main__":
         print(f"\nSelected {Fore.CYAN}Ollama{Style.RESET_ALL} model: {Fore.GREEN + Style.BRIGHT}{model_name}{Style.RESET_ALL}\n")
     elif args.gpt4free:
         print(f"{Fore.CYAN}Using GPT4Free for local LLM inference.{Style.RESET_ALL}")
-        model_name = "deepseek-r1"
+        model_name = args.g4fmodel
         #questionary.text("Enter the custom model name:").ask()
         #if not model_name:
         #    print("\n\nInterrupt received. Exiting...")
