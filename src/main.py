@@ -110,14 +110,17 @@ def create_workflow(selected_analysts=None):
     if selected_analysts is None:
         selected_analysts = list(analyst_nodes.keys())
     # Add selected analyst nodes
-    previous_node="start_node"
+    #previous_node="start_node"
     for analyst_key in selected_analysts:
-        node_name, node_func = analyst_nodes[analyst_key]
+        #node_name, node_func = analyst_nodes[analyst_key]
         # Add delay of cetrain time
-        workflow.add_node(node_name, node_func)
         #workflow.add_node(node_name, node_func)
-        workflow.add_edge(previous_node, node_name)
-        previous_node = node_name
+        #workflow.add_node(node_name, node_func)
+        #workflow.add_edge(previous_node, node_name)
+        #previous_node = node_name
+        node_name, node_func = analyst_nodes[analyst_key]
+        workflow.add_node(node_name, node_func)
+        workflow.add_edge("start_node", node_name)
 
     # Always add risk and portfolio management
     workflow.add_node("risk_management_agent", risk_management_agent)
